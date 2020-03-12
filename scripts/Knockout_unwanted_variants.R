@@ -2,6 +2,8 @@
 args = commandArgs(trailingOnly=TRUE)
 
 library(dplyr)
+library(readr)
+
 
 # Parse the input args
 TMB_out <- args[1]

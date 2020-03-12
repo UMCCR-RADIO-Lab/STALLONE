@@ -28,9 +28,10 @@ ref=/data/cephfs/punim0010/local/development/bcbio/genomes/Hsapiens/GRCh37/seq/G
 filt=/data/cephfs/punim0010/local/development.broken/bcbio/genomes/Hsapiens/GRCh37/variation/exac.vcf.gz
 vep_path=/data/cephfs/punim0010/extras/Pattison/miniconda/envs/maftools/bin/
 vep_data=/data/cephfs/punim0648/Pattison_projects/A5/BCBio_VCFs/VEP_GRCh37_cache/
+iso=../reference/MSK_isoforms.txt
 
 vcf2maf.pl --input-vcf $vcf --output-maf $maf_out --ref-fasta $ref --filter-vcf $filt \
-  --vep-path $vep_path --vep-data $vep_data --vep-forks 8 --tumor-id $maf \
+  --vep-path $vep_path --custom-enst $iso --vep-data $vep_data --vep-forks 8 --tumor-id $maf \
   --species homo_sapiens --retain-info DB,MQ,QD,FS,AD,DP
 
 }
