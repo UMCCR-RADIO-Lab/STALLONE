@@ -7,6 +7,7 @@ overhang="49"
 gzip="zcat"
 
 # These won't change but the reference files will be required
+sigs_ref="reference/signatures/signatures_probabilities.txt"
 ref_genome_dir="reference"
 ref_genome_fa="reference/GRCh37.fa"
 dbsnp="reference/dbsnp-151.vcf.gz"
@@ -20,7 +21,7 @@ vep_path="/data/cephfs/punim0010/extras/Pattison/miniconda2/envs/STALLONE/bin/"
 # Define all the outputs I want
 rule all:
     input:
-        final="output/final/TMB_all_samples.csv"
+        final="output/final/signatures/Relative_contributions.pdf"
 
 # Run atropos to trim low quality reads
 #The 'X{200}' args remove homopolymeric seqs at the 3' end of reads 
@@ -59,7 +60,7 @@ rule STAR_pass1:
         gz=gzip
     threads: 5
     shell:
-        "STAR --genomeDir {params.genomedir} --readFilesCommand {params.gz} --outTmpDir {params.tempdir} "
+        "STAR --outSAMtype BAM Unsorted --genomeDir {params.genomedir} --readFilesCommand {params.gz} --outTmpDir {params.tempdir} "
         "--runThreadN {threads} --readFilesIn {input} --outFileNamePrefix {params.out_file_prefix} "
         "--outStd BAM_Unsorted > {output.outbam}"
 
@@ -187,14 +188,14 @@ rule Get_BAM_coverage:
 # Get the total amount of the sample sufficiently covered to call variants
 rule Sum_coverage:
     input:
-        "output/coverage/{sample}.quantized.bed.gz"
+        "output/coverage/{sample}.quantized.bed"
     output:
         "output/total_coverage/{sample}_bases_covered.txt"        
     params:
         coding=coding,
     threads: 5
     shell:
-        "gunzip {input} | awk -F'\t' 'BEGIN{{SUM=0}}{{ SUM+=$3-$2 }}END{{print SUM}}' >> {output}"
+        "cat {input} | awk -F'\t' 'BEGIN{{SUM=0}}{{ SUM+=$3-$2 }}END{{print SUM}}' >> {output}"
     
 # GATK haplotpye caller
 rule GATK_HC:
@@ -249,6 +250,20 @@ rule Get_somatic_variants:
         TMB="output/final/TMB_all_samples.csv"
     shell:
         "Rscript scripts/Knockout_unwanted_variants.R {output.TMB} {output.maf} {input.mafs} {input.coverage}"
+
+
+# Plot the mutational signatures from the somatic variants (needs > 15 mutations to be plotted)
+rule Plot_signatures:
+    input:
+        complete_maf="output/final/Somatic_varaints_all_samples.maf"
+    output:
+        total_cont_plot="output/final/signatures/Total_contributions.pdf",
+        rel_cont_plot="output/final/signatures/Relative_contributions.pdf"
+    params:
+        sigs_ref=sigs_ref,
+        per_sample_plot_dir="output/final/signatures/Per_sample_96_context_profile/"
+    shell:
+        "Rscript scripts/Plot_sigs.R {input.complete_maf} {params.sigs_ref} {output.total_cont_plot} {output.rel_cont_plot} {params.per_sample_plot_dir}"
 
 
 
